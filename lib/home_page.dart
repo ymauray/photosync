@@ -143,11 +143,18 @@ class _PhotoCardState extends State<_PhotoCard> {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(widget._picture.title!),
-      subtitle: Text(destination),
-      //leading: snapshot.data![index].image,
-      trailing: _isLoading ? const CircularProgressIndicator() : null,
+    return FutureBuilder<File?>(
+      future: widget._picture.file,
+      builder: (context, snapshot) {
+        var path = snapshot.data?.path ?? '';
+        var file = path.substring(path.lastIndexOf('/') + 1);
+        return ListTile(
+          title: Text(widget._picture.title!),
+          subtitle: Text(file),
+          //leading: snapshot.data![index].image,
+          trailing: _isLoading ? const CircularProgressIndicator() : null,
+        );
+      },
     );
   }
 }
