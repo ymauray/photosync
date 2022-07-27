@@ -1,3 +1,4 @@
+import 'package:exif/exif.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -15,11 +16,13 @@ class PhotoMeta {
     required this.title,
     required this.destination,
     required this.createDateSecond,
+    required this.image,
   });
 
   final String title;
   final String destination;
   final int createDateSecond;
+  final Widget image;
 }
 
 class _HomePageState extends State<HomePage> {
@@ -32,20 +35,13 @@ class _HomePageState extends State<HomePage> {
       var output = <PhotoMeta>[];
       final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
         onlyAll: true,
-        filterOption: FilterOptionGroup(orders: [
-          const OrderOption(
-            type: OrderOptionType.createDate,
-            asc: false,
-          ),
-        ]),
-      );
-      output.addAll(
-        paths.map(
-          (path) => PhotoMeta(
-            title: path.name,
-            destination: '<folder>',
-            createDateSecond: 0,
-          ),
+        filterOption: FilterOptionGroup(
+          orders: [
+            const OrderOption(
+              type: OrderOptionType.createDate,
+              asc: false,
+            ),
+          ],
         ),
       );
 
@@ -53,33 +49,45 @@ class _HomePageState extends State<HomePage> {
           await paths.first.getAssetListPaged(page: 0, size: 100);
 
       for (var picture in pictures) {
-        var folder = folderFormatter.format(picture.createDateTime);
-        var file =
-            "${dateFormatter.format(picture.createDateTime)} ${picture.id}";
-        var title = await picture.titleAsync;
-        var extension =
-            title.substring(1 + title.lastIndexOf(".")).toLowerCase();
-        var destination = '$folder/$file.$extension';
-        output.add(
-          PhotoMeta(
-            title: title,
-            destination: destination,
-            createDateSecond: picture.createDateSecond ?? 0,
-          ),
-        );
+        if (await picture.isLocallyAvailable()) {
+          var file = await picture.file;
+          var data = await readExifFromBytes(file!.readAsBytesSync());
+          debugPrint(data.toString());
+          var folder = folderFormatter.format(picture.createDateTime);
+          var filename =
+              "${dateFormatter.format(picture.createDateTime)} ${picture.id}";
+          var title = await picture.titleAsync;
+          var extension =
+              title.substring(1 + title.lastIndexOf(".")).toLowerCase();
+          var destination = '$folder/$filename.$extension';
+          output.add(
+            PhotoMeta(
+              title: title,
+              destination: destination,
+              createDateSecond: picture.createDateSecond ?? 0,
+              image: AssetEntityImage(
+                picture,
+                isOriginal: false, // Defaults to `true`.
+                thumbnailSize:
+                    const ThumbnailSize.square(200), // Preferred value.
+                thumbnailFormat: ThumbnailFormat.jpeg, // Defaults to `jpeg`.
+              ),
+            ),
+          );
+        }
       }
 
-      output.sort((a, b) {
-        if ((a.destination == '<folder>') && (b.destination == '<folder>')) {
-          return a.title.compareTo(b.title);
-        } else if (a.destination == '<folder>') {
-          return -1;
-        } else if (b.destination == '<folder>') {
-          return 1;
-        } else {
-          return a.createDateSecond - b.createDateSecond;
-        }
-      });
+      //output.sort((a, b) {
+      //  if ((a.destination == '<folder>') && (b.destination == '<folder>')) {
+      //    return a.title.compareTo(b.title);
+      //  } else if (a.destination == '<folder>') {
+      //    return -1;
+      //  } else if (b.destination == '<folder>') {
+      //    return 1;
+      //  } else {
+      //    return a.createDateSecond - b.createDateSecond;
+      //  }
+      //});
 
       return output;
     } else {
@@ -105,6 +113,7 @@ class _HomePageState extends State<HomePage> {
                       itemBuilder: (context, index) => ListTile(
                         title: Text(snapshot.data![index].title),
                         subtitle: Text(snapshot.data![index].destination),
+                        leading: snapshot.data![index].image,
                       ),
                     ),
                   ),
