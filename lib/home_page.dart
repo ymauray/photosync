@@ -30,7 +30,15 @@ class _HomePageState extends State<HomePage> {
     var permission = await PhotoManager.requestPermissionExtend();
     if (permission.isAuth) {
       var output = <PhotoMeta>[];
-      final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList();
+      final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
+        onlyAll: true,
+        filterOption: FilterOptionGroup(orders: [
+          const OrderOption(
+            type: OrderOptionType.createDate,
+            asc: false,
+          ),
+        ]),
+      );
       output.addAll(
         paths.map(
           (path) => PhotoMeta(
@@ -41,40 +49,37 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-      if (paths.any((path) => path.name == 'Pictures')) {
-        var picturesFolder =
-            paths.where((path) => path.name == 'Pictures').first;
-        final List<AssetEntity> pictures =
-            await picturesFolder.getAssetListPaged(page: 0, size: 100);
+      final List<AssetEntity> pictures =
+          await paths.first.getAssetListPaged(page: 0, size: 100);
 
-        for (var picture in pictures) {
-          var folder = folderFormatter.format(picture.createDateTime);
-          var file =
-              "${dateFormatter.format(picture.createDateTime)} ${picture.id}";
-          var title = await picture.titleAsync;
-          var extension =
-              title.substring(1 + title.lastIndexOf(".")).toLowerCase();
-          var destination = '$folder/$file.$extension';
-          output.add(
-            PhotoMeta(
-              title: title,
-              destination: destination,
-              createDateSecond: picture.createDateSecond ?? 0,
-            ),
-          );
-        }
-        output.sort((a, b) {
-          if ((a.destination == '<folder>') && (b.destination == '<folder>')) {
-            return a.title.compareTo(b.title);
-          } else if (a.destination == '<folder>') {
-            return -1;
-          } else if (b.destination == '<folder>') {
-            return 1;
-          } else {
-            return a.createDateSecond - b.createDateSecond;
-          }
-        });
+      for (var picture in pictures) {
+        var folder = folderFormatter.format(picture.createDateTime);
+        var file =
+            "${dateFormatter.format(picture.createDateTime)} ${picture.id}";
+        var title = await picture.titleAsync;
+        var extension =
+            title.substring(1 + title.lastIndexOf(".")).toLowerCase();
+        var destination = '$folder/$file.$extension';
+        output.add(
+          PhotoMeta(
+            title: title,
+            destination: destination,
+            createDateSecond: picture.createDateSecond ?? 0,
+          ),
+        );
       }
+
+      output.sort((a, b) {
+        if ((a.destination == '<folder>') && (b.destination == '<folder>')) {
+          return a.title.compareTo(b.title);
+        } else if (a.destination == '<folder>') {
+          return -1;
+        } else if (b.destination == '<folder>') {
+          return 1;
+        } else {
+          return a.createDateSecond - b.createDateSecond;
+        }
+      });
 
       return output;
     } else {
@@ -91,7 +96,8 @@ class _HomePageState extends State<HomePage> {
       child: FutureBuilder<List<PhotoMeta>>(
         future: init(),
         builder: (context, snapshot) {
-          return snapshot.hasData
+          return snapshot.connectionState == ConnectionState.done &&
+                  snapshot.hasData
               ? Material(
                   child: CupertinoScrollbar(
                     child: ListView.builder(
