@@ -1,20 +1,9 @@
-import 'dart:io';
-import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:photo_manager/photo_manager.dart';
 
-final dateFormatter = DateFormat('yy-MM-dd HH-mm-ss');
-final folderFormatter = DateFormat('yyyy/MM');
-
-class AssetEntityWrapper {
-  AssetEntityWrapper(this.entity);
-
-  final AssetEntity entity;
-  bool deleteFlag = false;
-}
+import 'util/asset_entity_wrapper.dart';
+import 'util/photo_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -95,66 +84,10 @@ class _HomePageState extends State<HomePage> {
           child: ListView.builder(
             itemCount: _pictures.length,
             itemBuilder: (context, index) =>
-                _PhotoCard(picture: _pictures[index]),
+                PhotoCard(picture: _pictures[index]),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PhotoCard extends StatefulWidget {
-  const _PhotoCard({
-    Key? key,
-    required AssetEntity picture,
-  })  : _picture = picture,
-        super(key: key);
-
-  final AssetEntity _picture;
-
-  @override
-  State<_PhotoCard> createState() => _PhotoCardState();
-}
-
-class _PhotoCardState extends State<_PhotoCard> {
-  var destination = '';
-  var _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    var title = widget._picture.title!;
-    var folder = folderFormatter.format(widget._picture.createDateTime);
-    var id = widget._picture.id;
-    if (Platform.isIOS) {
-      id = title.substring(title.lastIndexOf('_') + 1, title.lastIndexOf('.'));
-    }
-    var filename =
-        "${dateFormatter.format(widget._picture.createDateTime)} $id";
-    var extension = title.substring(1 + title.lastIndexOf(".")).toLowerCase();
-    destination = '$folder/$filename.$extension';
-
-    Future.delayed(Duration(seconds: Random.secure().nextInt(5)), () {
-      setState(() {
-        _isLoading = true;
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<File?>(
-      future: widget._picture.file,
-      builder: (context, snapshot) {
-        var path = snapshot.data?.path ?? '';
-        var file = path.substring(path.lastIndexOf('/') + 1);
-        return ListTile(
-          title: Text(widget._picture.title!),
-          subtitle: Text(file),
-          //leading: snapshot.data![index].image,
-          trailing: _isLoading ? const CircularProgressIndicator() : null,
-        );
-      },
     );
   }
 }
