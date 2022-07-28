@@ -2,24 +2,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'photo_sync.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  // init().then((value) {
-  //   runApp(const MyApp());
-  // });
   runApp(const PhotoSync());
 }
 
-Future<String> init() async {
-  var storage = const FlutterSecureStorage();
+Future<bool> init() async {
   // await storage.write(key: 'username', value: 'yannick');
   // await storage.write(
   //   key: 'password',
@@ -27,39 +23,40 @@ Future<String> init() async {
   //       'gvlH2fSwpPvjZIf4vgwHQts4GOSaLibBsjJz98bTK371W9neE8zs9iQI3nBcKEdrmIWyUR7d',
   // );
   // await storage.write(key: 'server', value: 'https://cloud.my-nanuq.com');
-  String? username = await storage.read(key: 'username');
-  debugPrint("All done");
+  var storage = const FlutterSecureStorage();
+  String? username = await storage.read(key: 'user');
+  //debugPrint("All done");
 
-  final PermissionState ps = await PhotoManager.requestPermissionExtend();
-  final dateFormatter = DateFormat('yy-MM-dd HH-mm-ss');
-  final folderFormatter = DateFormat('yyyy/MM');
+  //final PermissionState ps = await PhotoManager.requestPermissionExtend();
+  //final dateFormatter = DateFormat('yy-MM-dd HH-mm-ss');
+  //final folderFormatter = DateFormat('yyyy/MM');
 
-  if (ps.isAuth) {
-    final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList();
-    final picturesFolder = paths.where((path) => path.name == 'Pictures').first;
-    final List<AssetEntity> pictures =
-        await picturesFolder.getAssetListPaged(page: 0, size: 100);
-    for (var picture in pictures) {
-      var mimeType = await picture.mimeTypeAsync;
-      var title = await picture.titleAsync;
-      var folder = folderFormatter.format(picture.createDateTime);
-      var file =
-          "${dateFormatter.format(picture.createDateTime)} ${picture.id}";
-      var destination = '$folder/$file.jpg';
+  //if (ps.isAuth) {
+  //  final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList();
+  //  final picturesFolder = paths.where((path) => path.name == 'Pictures').first;
+  //  final List<AssetEntity> pictures =
+  //      await picturesFolder.getAssetListPaged(page: 0, size: 100);
+  //  for (var picture in pictures) {
+  //    var mimeType = await picture.mimeTypeAsync;
+  //    var title = await picture.titleAsync;
+  //    var folder = folderFormatter.format(picture.createDateTime);
+  //    var file =
+  //        "${dateFormatter.format(picture.createDateTime)} ${picture.id}";
+  //    var destination = '$folder/$file.jpg';
 
-      debugPrint("id : ${picture.id}, "
-          "width: ${picture.width}, "
-          "height: ${picture.height}, "
-          "createDateTime: ${dateFormatter.format(picture.createDateTime)}, "
-          "destination: $destination, "
-          "title: $title, "
-          "mimeType: $mimeType, ");
-    }
-  } else {
-    debugPrint("Permission denied");
-  }
+  //    debugPrint("id : ${picture.id}, "
+  //        "width: ${picture.width}, "
+  //        "height: ${picture.height}, "
+  //        "createDateTime: ${dateFormatter.format(picture.createDateTime)}, "
+  //        "destination: $destination, "
+  //        "title: $title, "
+  //        "mimeType: $mimeType, ");
+  //  }
+  //} else {
+  //  debugPrint("Permission denied");
+  //}
 
-  return username ?? '';
+  return username != null && username.isNotEmpty;
 }
 
 class MyApp extends StatelessWidget {
@@ -68,21 +65,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      title: 'PhotoSync',
+      home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }

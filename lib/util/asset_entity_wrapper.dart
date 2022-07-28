@@ -5,4 +5,7 @@ class AssetEntityWrapper {
 
   final AssetEntity entity;
   bool deleteFlag = false;
+  String folder = '';
+  String filename = '';
+  String destination = '';
 }
