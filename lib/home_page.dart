@@ -45,8 +45,9 @@ class _HomePageState extends State<HomePage> {
     var permission = await PhotoManager.requestPermissionExtend();
     var pictures = <AssetEntityWrapper>[];
     if (permission.isAuth) {
+      var wrappedAssets = <AssetEntityWrapper>[];
+
       final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
-        onlyAll: true,
         filterOption: FilterOptionGroup(
           orders: [
             const OrderOption(
@@ -58,16 +59,25 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-      final rootPath = paths.first;
+      //final rootPath = paths.first;
+      for (var rootPath in paths) {
+        debugPrint(rootPath.toString());
+        var assets = await rootPath.getAssetListPaged(
+          page: page,
+          size: pageSize,
+        );
 
-      var assets = await rootPath.getAssetListPaged(
-        page: page,
-        size: pageSize,
-      );
+        for (var asset in assets) {
+          debugPrint(asset.toString());
+          debugPrint(asset.title);
+        }
 
-      var wrappedAssets = assets
-          .where((e) => (e.title ?? '').toLowerCase().startsWith("img_"))
-          .map((asset) => AssetEntityWrapper(asset));
+        var wrapped = assets
+            .where((e) => (e.title ?? '').toLowerCase().startsWith("img_"))
+            .map((asset) => AssetEntityWrapper(asset));
+
+        wrappedAssets.addAll(wrapped);
+      }
 
       for (var wrappedAsset in wrappedAssets) {
         var locallyAvailable = await wrappedAsset.entity.isLocallyAvailable();
@@ -108,7 +118,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    _processImages();
+    //_processImages();
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
         middle: Text('PhotoSync'),
