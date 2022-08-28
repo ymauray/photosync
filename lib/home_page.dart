@@ -1,33 +1,94 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 
+import 'providers.dart';
 import 'util/asset_entity_wrapper.dart';
 import 'widgets/photo_card.dart';
 
 final _dateFormatter = DateFormat('yy-MM-dd HH-mm-ss');
 final _folderFormatter = DateFormat('yyyy/MM');
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // (() async {
+    //   const storage = FlutterSecureStorage();
+    //   var username = await storage.read(key: 'user');
+    //   var password = await storage.read(key: 'password');
+    //   var token = base64.encode(latin1.encode('$username:$password')).trim();
+    //   final HttpClientResponse response = await nextcloudSend(
+    //     'PROPFIND',
+    //     'https://cloud.my-nanuq.com/remote.php/dav/files/$username/Photos/IPhone',
+    //     localHeaders: {
+    //       HttpHeaders.authorizationHeader: 'Basic $token',
+    //     },
+    //   );
+    //   final stringData = await response.transform(utf8.decoder).join();
+    //   final document = XmlDocument.parse(stringData);
+    //   debugPrint("---------");
+    //   debugPrint(document.toString());
+    //   debugPrint("---------");
+    //   debugPrint(document.toXmlString(pretty: true, indent: '\t'));
+    //   debugPrint("---------");
+    // })();
+
+    final items = ref.watch(itemsProvider);
+
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('PhotoSync'),
+      ),
+      child: Material(
+        child: CupertinoScrollbar(
+          child: ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(items[index].title),
+                subtitle: Text(items[index].date.toString()),
+                leading: Random.secure().nextBool()
+                    ? const Icon(
+                        Icons.check,
+                        color: Colors.green,
+                      )
+                    : const Icon(
+                        Icons.close,
+                        color: Colors.red,
+                      ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HomePage2 extends StatefulWidget {
+  const HomePage2({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage2> createState() => _HomePageState2();
 }
 
 final folderNameFormatter = DateFormat('yyyy/MM');
 final fileNameFormatter = DateFormat('yy-MM-dd HH-mm-ss');
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState2 extends State<HomePage2> {
   var page = 0;
-  var pageSize = 100;
+  var pageSize = 10;
   var _pictures = <AssetEntityWrapper>[];
 
   @override
